@@ -1,0 +1,64 @@
+<%- include('../partials/head') %>
+<p class="crumbs"><a href="/clubs/<%= club._id %>">← <%= club.name %></a></p>
+<h1>Add a book</h1>
+<form class="search-inline search-big" method="get" action="/clubs/<%= club._id %>/books/search">
+  <input type="search" name="q" value="<%= q %>" placeholder="Title or author" aria-label="Title or author" autofocus required>
+  <button class="btn btn-primary" type="submit">Search</button>
+</form>
+
+<% function addForm(fields) { %>
+  <form method="post" action="/clubs/<%= club._id %>/books">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <% Object.keys(fields).forEach(function (k) { if (fields[k] != null) { %>
+      <input type="hidden" name="<%= k %>" value="<%= fields[k] %>">
+    <% } }) %>
+    <button class="btn btn-small" type="submit" data-loading="Adding…">Add to shelf</button>
+  </form>
+<% } %>
+
+<% if (q) { %>
+  <% if (catalogResults.length) { %>
+    <section class="section">
+      <h2 class="section-title">In the catalog</h2>
+      <ul class="result-list">
+        <% catalogResults.forEach(function (book) { %>
+          <li class="result">
+            <%- include('../partials/cover', { book: book, size: 'sm' }) %>
+            <div class="result-body"><strong><%= book.title %></strong><span class="muted small"><%= book.authorLine %><%= book.publishedYear ? ` · ${book.publishedYear}` : '' %></span></div>
+            <% if (club.hasBook(book._id)) { %><span class="badge">On shelf</span><% } else { addForm({ bookId: String(book._id) }); } %>
+          </li>
+        <% }) %>
+      </ul>
+    </section>
+  <% } %>
+
+  <section class="section">
+    <h2 class="section-title">From Open Library</h2>
+    <% if (openLibraryError) { %><div class="callout"><%= openLibraryError %></div><% } %>
+    <% if (openLibraryResults.length) { %>
+      <ul class="result-list">
+        <% openLibraryResults.forEach(function (r) { %>
+          <li class="result">
+            <%- include('../partials/cover', { book: r, size: 'sm' }) %>
+            <div class="result-body"><strong><%= r.title %></strong><span class="muted small"><%= r.authors.join(', ') || 'Unknown author' %><%= r.publishedYear ? ` · ${r.publishedYear}` : '' %></span></div>
+            <% addForm({ openLibraryKey: r.openLibraryKey, title: r.title, authors: r.authors.join(', '), publishedYear: r.publishedYear, coverUrl: r.coverUrl, subjects: r.subjects.join('|') }); %>
+          </li>
+        <% }) %>
+      </ul>
+    <% } else if (!openLibraryError) { %>
+      <p class="muted">No matches on Open Library.</p>
+    <% } %>
+  </section>
+<% } %>
+
+<details class="card details-form" <%= q && !catalogResults.length && !openLibraryResults.length ? 'open' : '' %>>
+  <summary>Add a book by hand</summary>
+  <form method="post" action="/clubs/<%= club._id %>/books" class="stack">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <label>Title<input type="text" name="title" required maxlength="200" value="<%= q %>"></label>
+    <label>Author(s)<input type="text" name="authors" placeholder="Separate with commas"></label>
+    <label>Short description <span class="muted">(helps recommendations and Ask the club)</span><textarea name="description" rows="3" maxlength="4000"></textarea></label>
+    <button class="btn" type="submit">Add to shelf</button>
+  </form>
+</details>
+<%- include('../partials/foot') %>

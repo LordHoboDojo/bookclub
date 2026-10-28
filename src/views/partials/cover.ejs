@@ -1,0 +1,10 @@
+<%# Book cover with a generated fallback. Locals: book, size ('sm' | 'md' | 'lg') %>
+<% const sz = typeof size !== 'undefined' ? size : 'md'; %>
+<% if (book && book.coverUrl) { %>
+  <img class="cover cover-<%= sz %>" src="<%= book.coverUrl %>" alt="Cover of <%= book.title %>" loading="lazy">
+<% } else if (book) { %>
+  <div class="cover cover-<%= sz %> cover-generated" style="--hue: <%= h.coverHue(book.title) %>" role="img" aria-label="Cover of <%= book.title %>">
+    <span class="cover-title"><%= book.title %></span>
+    <span class="cover-author"><%= (book.authors || [])[0] || '' %></span>
+  </div>
+<% } %>

@@ -1,0 +1,18 @@
+<%- include('../partials/head') %>
+<section class="card form-card">
+  <h1>Start a club</h1>
+  <p class="muted">You'll be the club leader: you can invite members and choose what the club reads now.</p>
+  <% if (typeof error !== 'undefined') { %><div class="flash flash-error"><%= error %></div><% } %>
+  <form method="post" action="/clubs" class="stack">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <label>Club name<input type="text" name="name" maxlength="80" required value="<%= values.name || '' %>" placeholder="The Lamplight Readers"></label>
+    <label>What's it about? <span class="muted">(optional)</span>
+      <textarea name="description" rows="3" maxlength="1000" placeholder="Monthly picks, mostly literary fiction, always snacks."><%= values.description || '' %></textarea>
+    </label>
+    <div class="row-actions">
+      <button class="btn btn-primary" type="submit">Create club</button>
+      <a class="btn btn-ghost" href="/dashboard">Cancel</a>
+    </div>
+  </form>
+</section>
+<%- include('../partials/foot') %>

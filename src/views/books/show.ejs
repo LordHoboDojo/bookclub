@@ -1,0 +1,76 @@
+<%- include('../partials/head') %>
+<p class="crumbs"><a href="/clubs/<%= club._id %>">← <%= club.name %></a></p>
+<article class="book-hero">
+  <%- include('../partials/cover', { book: book, size: 'xl' }) %>
+  <div class="book-hero-body">
+    <span class="status status-<%= entry.status %>"><%= h.statusLabel[entry.status] %></span>
+    <h1><%= book.title %></h1>
+    <p class="muted"><%= book.authorLine %><%= book.publishedYear ? ` · ${book.publishedYear}` : '' %></p>
+    <% if (average != null) { %>
+      <p class="rating-line"><span class="stars" aria-hidden="true"><%= h.stars(average) %></span> <strong><%= average.toFixed(1) %></strong> <span class="muted">from <%= h.plural(reviews.length, 'member review') %></span></p>
+    <% } %>
+    <% h.paragraphs(book.description).slice(0, 3).forEach(function (p) { %><p><%= p %></p><% }) %>
+    <% if (book.subjects.length) { %>
+      <ul class="tags"><% book.subjects.slice(0, 8).forEach(function (s) { %><li><%= s %></li><% }) %></ul>
+    <% } %>
+    <% if (isLeader) { %>
+      <form method="post" action="/clubs/<%= club._id %>/books/<%= book._id %>/status" class="status-form">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <label class="inline">Status
+          <select name="status">
+            <% statuses.forEach(function (s) { %><option value="<%= s %>" <%= s === entry.status ? 'selected' : '' %>><%= h.statusLabel[s] %></option><% }) %>
+          </select>
+        </label>
+        <button class="btn btn-small" type="submit">Update</button>
+      </form>
+    <% } %>
+  </div>
+</article>
+
+<div class="two-col">
+  <section class="section" id="review">
+    <h2 class="section-title"><%= mine ? 'Your review' : 'Rate this book' %></h2>
+    <form method="post" action="/clubs/<%= club._id %>/books/<%= book._id %>/reviews" class="card stack">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <fieldset class="star-input">
+        <legend>Your rating</legend>
+        <% [5, 4, 3, 2, 1].forEach(function (n) { %>
+          <input type="radio" id="star-<%= n %>" name="rating" value="<%= n %>" <%= mine && mine.rating === n ? 'checked' : '' %> required>
+          <label for="star-<%= n %>" title="<%= n %> star<%= n > 1 ? 's' : '' %>">★</label>
+        <% }) %>
+      </fieldset>
+      <label>Thoughts <span class="muted">(optional)</span>
+        <textarea name="body" rows="5" maxlength="5000" placeholder="What stayed with you? What would you ask the group?"><%= mine ? mine.body : '' %></textarea>
+      </label>
+      <button class="btn btn-primary" type="submit" data-loading="Saving…"><%= mine ? 'Update review' : 'Save review' %></button>
+    </form>
+  </section>
+
+  <section class="section">
+    <h2 class="section-title">What the club thinks</h2>
+    <% if (!reviews.length) { %><p class="muted">No reviews yet. Be the first.</p><% } %>
+    <ul class="review-list">
+      <% reviews.forEach(function (r) { %>
+        <li class="review" id="review-<%= r._id %>">
+          <div class="review-head">
+            <% if (r.user && r.user.avatarUrl) { %><img class="avatar" src="<%= r.user.avatarUrl %>" alt="" referrerpolicy="no-referrer"><% } else { %><span class="avatar avatar-initials"><%= h.initials(r.user) %></span><% } %>
+            <strong><%= h.displayName(r.user) %></strong>
+            <span class="stars" aria-label="<%= r.rating %> out of 5"><%= h.stars(r.rating) %></span>
+            <span class="muted small"><%= h.timeAgo(r.updatedAt) %></span>
+          </div>
+          <% if (r.body) { %><p><%= r.body %></p><% } %>
+        </li>
+      <% }) %>
+    </ul>
+
+    <% if (notes.length) { %>
+      <h3 class="side-subtitle">Meeting notes</h3>
+      <ul class="note-list">
+        <% notes.forEach(function (n) { %>
+          <li><a href="/clubs/<%= club._id %>/notes/<%= n._id %>"><%= n.title %></a> <span class="muted small"><%= h.formatDate(n.meetingDate || n.createdAt) %></span></li>
+        <% }) %>
+      </ul>
+    <% } %>
+  </section>
+</div>
+<%- include('../partials/foot') %>

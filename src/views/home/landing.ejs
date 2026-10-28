@@ -1,0 +1,35 @@
+<%- include('../partials/head') %>
+<section class="hero">
+  <div class="hero-copy">
+    <p class="eyebrow">For reading groups</p>
+    <h1>Your book club, with a memory.</h1>
+    <p class="lede">Invite your members, keep the shelf in one place, and let every review and meeting note become something the club can ask about later. When it's time to choose the next book, get suggestions that fit what your group actually loved.</p>
+    <div class="hero-actions">
+      <a class="btn btn-primary" href="/login">Start your club</a>
+      <a class="btn btn-ghost" href="#how">How it works</a>
+    </div>
+  </div>
+  <div class="hero-stack" aria-hidden="true">
+    <% [['Station Eleven','Emily St. John Mandel'],['Piranesi','Susanna Clarke'],['Circe','Madeline Miller']].forEach(function (b, i) { %>
+      <div class="cover cover-lg cover-generated hero-cover hero-cover-<%= i %>" style="--hue: <%= h.coverHue(b[0]) %>">
+        <span class="cover-title"><%= b[0] %></span><span class="cover-author"><%= b[1] %></span>
+      </div>
+    <% }) %>
+  </div>
+</section>
+
+<section id="how" class="feature-grid">
+  <article class="feature">
+    <h3>Invite by email</h3>
+    <p>The club leader sends invites; members join with their Google account. Links are single-use and expire.</p>
+  </article>
+  <article class="feature">
+    <h3>Ask the club</h3>
+    <p>"What did we think of the ending?" Answers come from your own reviews and meeting notes, with citations.</p>
+  </article>
+  <article class="feature">
+    <h3>What to read next</h3>
+    <p>Recommendations weighted by your ratings, with a note on why each pick suits your group.</p>
+  </article>
+</section>
+<%- include('../partials/foot') %>

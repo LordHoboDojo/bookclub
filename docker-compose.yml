@@ -1,0 +1,66 @@
+# Local stack: app + MongoDB + Mailpit (catches invite emails) + mongo-express (browse the NoSQL data).
+#   docker compose up --build
+#   App:            http://localhost:3000
+#   Invite inbox:   http://localhost:8025
+#   Database UI:    http://localhost:8081   (admin / bookclub)
+name: bookclub
+
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      APP_URL: ${APP_URL:-http://localhost:3000}
+      MONGODB_URI: mongodb://mongo:27017/bookclub
+      MAIL_PROVIDER: ${MAIL_PROVIDER:-smtp}
+      SMTP_HOST: mailpit
+      SMTP_PORT: 1025
+      EMBEDDING_PROVIDER: ${EMBEDDING_PROVIDER:-local}
+      SEED_CATALOG: "true"
+      DEV_LOGIN_ENABLED: ${DEV_LOGIN_ENABLED:-true}
+    depends_on:
+      mongo:
+        condition: service_healthy
+      mailpit:
+        condition: service_started
+    restart: unless-stopped
+
+  mongo:
+    image: mongo:7
+    ports:
+      - "27017:27017" # optional: lets MongoDB Compass connect from your machine
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  mongo-express:
+    image: mongo-express:1.0.2
+    ports:
+      - "8081:8081"
+    environment:
+      ME_CONFIG_MONGODB_URL: mongodb://mongo:27017/
+      ME_CONFIG_BASICAUTH_USERNAME: admin
+      ME_CONFIG_BASICAUTH_PASSWORD: ${MONGO_EXPRESS_PASSWORD:-bookclub}
+    depends_on:
+      mongo:
+        condition: service_healthy
+    restart: unless-stopped
+
+  mailpit:
+    image: axllent/mailpit:latest
+    ports:
+      - "8025:8025" # web inbox
+      - "1025:1025" # SMTP
+
+volumes:
+  mongo-data:

@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= typeof title !== 'undefined' ? `${title} · ${appName}` : appName %></title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/app.css">
+  <script src="/js/app.js" defer></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand" href="<%= currentUser ? '/dashboard' : '/' %>">
+        <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><path d="M4 7c4-2 8-2 12 1 4-3 8-3 12-1v18c-4-2-8-2-12 1-4-3-8-3-12-1z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M16 8v18" stroke="currentColor" stroke-width="2"/></svg>
+        <span><%= appName %></span>
+      </a>
+      <% if (currentUser) { %>
+        <nav class="main-nav" aria-label="Main">
+          <a href="/dashboard" class="<%= currentPath === '/dashboard' ? 'active' : '' %>">Clubs</a>
+          <a href="/recommendations" class="<%= currentPath === '/recommendations' ? 'active' : '' %>">For you</a>
+        </nav>
+        <div class="user-menu">
+          <% if (currentUser.avatarUrl) { %>
+            <img class="avatar" src="<%= currentUser.avatarUrl %>" alt="" referrerpolicy="no-referrer">
+          <% } else { %>
+            <span class="avatar avatar-initials"><%= h.initials(currentUser) %></span>
+          <% } %>
+          <span class="user-name"><%= h.displayName(currentUser) %></span>
+          <form method="post" action="/logout">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <button class="btn-link" type="submit">Sign out</button>
+          </form>
+        </div>
+      <% } else { %>
+        <a class="btn btn-small" href="/login">Sign in</a>
+      <% } %>
+    </div>
+  </header>
+
+  <main class="container main">
+    <% if (flash.length) { %>
+      <div class="flash-stack" role="status">
+        <% flash.forEach(function (f) { %>
+          <div class="flash flash-<%= f.type %>"><%= f.message %></div>
+        <% }) %>
+      </div>
+    <% } %>

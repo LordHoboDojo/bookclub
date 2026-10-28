@@ -1,0 +1,54 @@
+<%- include('../partials/head') %>
+<% if (club) { %>
+  <header class="club-hero compact"><p class="eyebrow">Book club</p><h1><%= club.name %></h1></header>
+  <%- include('../partials/clubnav', { active: 'recs' }) %>
+<% } %>
+
+<div class="page-head">
+  <div>
+    <h2 class="page-title"><%= heading %></h2>
+    <p class="muted small">
+      <% if (recs && recs.generatedAt) { %>
+        Generated <%= h.timeAgo(recs.generatedAt) %> ·
+        <%= recs.source === 'claude' ? `ranked and explained by ${recs.model || 'Claude'}` : recs.source === 'starter' ? 'starter picks (rate a few books to personalize)' : 'ranked by similarity to what you rated highly' %>
+      <% } else { %>
+        Based on <%= club ? "the club's shelf and members' ratings" : 'the books you have rated across your clubs' %>.
+      <% } %>
+    </p>
+  </div>
+  <form method="post" action="<%= refreshAction %>">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <button class="btn btn-primary" type="submit" data-loading="Finding books…"><%= recs && recs.generatedAt ? 'Refresh' : 'Get recommendations' %></button>
+  </form>
+</div>
+
+<% const items = (recs && recs.items ? recs.items : []).filter(function (i) { return i.book; }); %>
+<% if (!items.length) { %>
+  <section class="card empty">
+    <h2>Nothing yet</h2>
+    <p class="muted">Recommendations look at <%= club ? "the club's shelf and every member's ratings" : 'your ratings' %>, find similar books in the catalog and on Open Library, then <%= llmLabel ? 'ask Claude to pick the best fits and explain why' : 'rank them by similarity' %>.</p>
+  </section>
+<% } else { %>
+  <ol class="rec-list">
+    <% items.forEach(function (item, i) { const book = item.book; %>
+      <li class="card rec">
+        <span class="rec-rank"><%= i + 1 %></span>
+        <%- include('../partials/cover', { book: book, size: 'md' }) %>
+        <div class="rec-body">
+          <h3><%= book.title %></h3>
+          <p class="muted small"><%= book.authorLine %><%= book.publishedYear ? ` · ${book.publishedYear}` : '' %><% if (item.score != null) { %> · <span title="Cosine similarity to your taste profile"><%= Math.round(item.score * 100) %>% match</span><% } %></p>
+          <p class="rec-reason"><%= item.reason %></p>
+          <% if (book.subjects && book.subjects.length) { %><ul class="tags"><% book.subjects.slice(0, 5).forEach(function (s) { %><li><%= s %></li><% }) %></ul><% } %>
+          <% if (addAction && !club.hasBook(book._id)) { %>
+            <form method="post" action="<%= addAction %>">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+              <input type="hidden" name="bookId" value="<%= book._id %>">
+              <button class="btn btn-small" type="submit">Add to Up next</button>
+            </form>
+          <% } %>
+        </div>
+      </li>
+    <% }) %>
+  </ol>
+<% } %>
+<%- include('../partials/foot') %>

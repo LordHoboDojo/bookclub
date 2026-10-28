@@ -1,0 +1,206 @@
+<%- include('../partials/head') %>
+<header class="club-hero">
+  <p class="eyebrow">Book club · <%= h.plural(club.members.length, 'member') %></p>
+  <h1><%= club.name %></h1>
+  <% if (club.description) { %><p class="lede"><%= club.description %></p><% } %>
+</header>
+<%- include('../partials/clubnav', { active: 'shelf' }) %>
+
+<div class="club-layout">
+  <div class="club-main">
+
+    <section class="section">
+      <h2 class="section-title">Reading now</h2>
+      <% if (reading.length) { const entry = reading[0]; const book = entry.book; %>
+        <article class="card now-reading">
+          <%- include('../partials/cover', { book: book, size: 'lg' }) %>
+          <div class="now-reading-body">
+            <h3><a href="/clubs/<%= club._id %>/books/<%= book._id %>"><%= book.title %></a></h3>
+            <p class="muted"><%= book.authorLine %><%= book.publishedYear ? ` · ${book.publishedYear}` : '' %></p>
+            <% if (book.description) { %><p><%= h.truncate(book.description, 280) %></p><% } %>
+            <div class="row-actions">
+              <a class="btn btn-primary btn-small" href="/clubs/<%= club._id %>/books/<%= book._id %>#review">Rate &amp; review</a>
+              <% if (isLeader) { %>
+                <form method="post" action="/clubs/<%= club._id %>/books/<%= book._id %>/status">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                  <input type="hidden" name="status" value="finished">
+                  <button class="btn btn-small" type="submit">Mark finished</button>
+                </form>
+              <% } %>
+            </div>
+          </div>
+        </article>
+      <% } else { %>
+        <div class="card empty-inline">
+          <p class="muted">Nothing on the go. <%= isLeader ? 'Pick something from "Up next" or add a book below.' : 'The club leader picks the current book.' %></p>
+        </div>
+      <% } %>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <h2 class="section-title">Up next</h2>
+      </div>
+      <form class="search-inline" method="get" action="/clubs/<%= club._id %>/books/search">
+        <input type="search" name="q" placeholder="Search for a book to add…" aria-label="Search for a book to add" required>
+        <button class="btn" type="submit">Search</button>
+      </form>
+      <% if (upcoming.length) { %>
+        <ul class="shelf-list">
+          <% upcoming.forEach(function (entry) { const book = entry.book; %>
+            <li class="shelf-item">
+              <%- include('../partials/cover', { book: book, size: 'sm' }) %>
+              <div class="shelf-item-body">
+                <a href="/clubs/<%= club._id %>/books/<%= book._id %>"><strong><%= book.title %></strong></a>
+                <span class="muted small"><%= book.authorLine %><% if (entry.addedBy) { %> · suggested by <%= h.displayName(entry.addedBy) %><% } %></span>
+              </div>
+              <% if (isLeader) { %>
+                <div class="shelf-item-actions">
+                  <form method="post" action="/clubs/<%= club._id %>/books/<%= book._id %>/status">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                    <input type="hidden" name="status" value="reading">
+                    <button class="btn btn-small" type="submit">Start reading</button>
+                  </form>
+                  <form method="post" action="/clubs/<%= club._id %>/books/<%= book._id %>/remove" data-confirm="Remove this book from the shelf?">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                    <button class="btn-link danger small" type="submit">Remove</button>
+                  </form>
+                </div>
+              <% } %>
+            </li>
+          <% }) %>
+        </ul>
+      <% } else { %>
+        <p class="muted small">No suggestions yet. Search above, or see <a href="/clubs/<%= club._id %>/recommendations">what we recommend</a>.</p>
+      <% } %>
+    </section>
+
+    <% if (finished.length) { %>
+      <section class="section">
+        <h2 class="section-title">Finished</h2>
+        <div class="cover-grid">
+          <% finished.forEach(function (entry) { %>
+            <a class="cover-link" href="/clubs/<%= club._id %>/books/<%= entry.book._id %>" title="<%= entry.book.title %>">
+              <%- include('../partials/cover', { book: entry.book, size: 'md' }) %>
+              <span class="cover-caption"><%= entry.book.title %></span>
+            </a>
+          <% }) %>
+        </div>
+      </section>
+    <% } %>
+
+    <section class="section" id="notes">
+      <h2 class="section-title">Meeting notes</h2>
+      <% if (notes.length) { %>
+        <ul class="note-list">
+          <% notes.forEach(function (note) { %>
+            <li>
+              <a href="/clubs/<%= club._id %>/notes/<%= note._id %>"><strong><%= note.title %></strong></a>
+              <span class="muted small"><%= h.formatDate(note.meetingDate || note.createdAt) %><%= note.book ? ` · ${note.book.title}` : '' %> · by <%= h.displayName(note.author) %></span>
+              <p class="small"><%= h.truncate(note.body, 180) %></p>
+            </li>
+          <% }) %>
+        </ul>
+      <% } %>
+      <details class="card details-form" <%= notes.length ? '' : 'open' %>>
+        <summary>Add meeting notes</summary>
+        <form method="post" action="/clubs/<%= club._id %>/notes" class="stack">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <label>Title<input type="text" name="title" maxlength="140" required placeholder="October meetup: the ending debate"></label>
+          <div class="grid-2">
+            <label>Book
+              <select name="book">
+                <option value="">General discussion</option>
+                <% club.books.filter(function (b) { return b.book; }).forEach(function (b) { %>
+                  <option value="<%= b.book._id %>" <%= b.status === 'reading' ? 'selected' : '' %>><%= b.book.title %></option>
+                <% }) %>
+              </select>
+            </label>
+            <label>Meeting date<input type="date" name="meetingDate"></label>
+          </div>
+          <label>What did people say?<textarea name="body" rows="6" required placeholder="Who loved it, who didn't, the questions that came up…"></textarea></label>
+          <button class="btn btn-primary" type="submit" data-loading="Saving…">Save notes</button>
+          <p class="hint">Notes are indexed so anyone can ask about them later in "Ask the club".</p>
+        </form>
+      </details>
+    </section>
+  </div>
+
+  <aside class="club-side">
+    <section class="card side-card ask-card">
+      <h2 class="side-title">Ask the club</h2>
+      <p class="small muted"><%= h.plural(knowledgeChunks, 'passage') %> from your books, reviews and notes are searchable.</p>
+      <form method="post" action="/clubs/<%= club._id %>/ask" class="stack">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <input type="text" name="question" placeholder="What did we think of the ending?" required maxlength="500" aria-label="Question">
+        <button class="btn btn-small" type="submit" data-loading="Thinking…">Ask</button>
+      </form>
+    </section>
+
+    <% if (club.recommendations && club.recommendations.items && club.recommendations.items.length) { %>
+      <section class="card side-card">
+        <h2 class="side-title">Suggested next</h2>
+        <ul class="mini-recs">
+          <% club.recommendations.items.slice(0, 3).forEach(function (item) { if (!item.book) return; %>
+            <li><%- include('../partials/cover', { book: item.book, size: 'xs' }) %><span><strong><%= item.book.title %></strong><br><span class="muted small"><%= item.book.authorLine %></span></span></li>
+          <% }) %>
+        </ul>
+        <a class="small" href="/clubs/<%= club._id %>/recommendations">See all and why →</a>
+      </section>
+    <% } %>
+
+    <section class="card side-card" id="members">
+      <h2 class="side-title">Members</h2>
+      <ul class="member-list">
+        <% club.members.forEach(function (m) { if (!m.user) return; %>
+          <li>
+            <% if (m.user.avatarUrl) { %><img class="avatar" src="<%= m.user.avatarUrl %>" alt="" referrerpolicy="no-referrer"><% } else { %><span class="avatar avatar-initials"><%= h.initials(m.user) %></span><% } %>
+            <span class="member-name"><%= h.displayName(m.user) %><% if (m.role === 'leader') { %> <span class="badge">Leader</span><% } %></span>
+            <% if (isLeader && m.role !== 'leader') { %>
+              <form method="post" action="/clubs/<%= club._id %>/members/<%= m.user._id %>/remove" data-confirm="Remove <%= h.displayName(m.user) %> from the club?">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <button class="btn-link danger small" type="submit" aria-label="Remove <%= h.displayName(m.user) %>">Remove</button>
+              </form>
+            <% } %>
+          </li>
+        <% }) %>
+      </ul>
+    </section>
+
+    <% if (isLeader) { %>
+      <section class="card side-card" id="invites">
+        <h2 class="side-title">Invite members</h2>
+        <form method="post" action="/clubs/<%= club._id %>/invites" class="stack">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <textarea name="emails" rows="3" required placeholder="friend@gmail.com, another@gmail.com" aria-label="Email addresses"></textarea>
+          <button class="btn btn-primary btn-small" type="submit" data-loading="Sending…">Send invites</button>
+          <p class="hint">Each person gets a private link that expires. They sign in with Google to join.</p>
+        </form>
+        <% if (invites.length) { %>
+          <h3 class="side-subtitle">Pending</h3>
+          <ul class="invite-pending">
+            <% invites.forEach(function (inv) { %>
+              <li>
+                <div>
+                  <span class="invite-email"><%= inv.email %></span>
+                  <span class="muted small"><%= inv.isExpired ? 'Expired' : `Sent ${h.timeAgo(inv.lastSentAt || inv.createdAt)}` %></span>
+                </div>
+                <div class="invite-actions">
+                  <form method="post" action="/clubs/<%= club._id %>/invites/<%= inv._id %>/resend">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                    <button class="btn-link small" type="submit">Resend</button>
+                  </form>
+                  <form method="post" action="/clubs/<%= club._id %>/invites/<%= inv._id %>/revoke" data-confirm="Revoke the invite for <%= inv.email %>?">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                    <button class="btn-link danger small" type="submit">Revoke</button>
+                  </form>
+                </div>
+              </li>
+            <% }) %>
+          </ul>
+        <% } %>
+      </section>
+    <% } %>
+  </aside>
+</div>
+<%- include('../partials/foot') %>

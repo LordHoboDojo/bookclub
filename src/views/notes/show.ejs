@@ -1,0 +1,20 @@
+<%- include('../partials/head') %>
+<p class="crumbs"><a href="/clubs/<%= club._id %>#notes">← <%= club.name %></a></p>
+<article class="card note-article">
+  <p class="eyebrow">Meeting notes · <%= h.formatDate(note.meetingDate || note.createdAt) %></p>
+  <h1><%= note.title %></h1>
+  <p class="muted">
+    Written by <%= h.displayName(note.author) %>
+    <% if (note.book) { %> · about <a href="/clubs/<%= club._id %>/books/<%= note.book._id %>"><%= note.book.title %></a><% } %>
+  </p>
+  <div class="prose">
+    <% h.paragraphs(note.body).forEach(function (p) { %><p><%= p %></p><% }) %>
+  </div>
+  <% if (isLeader || (note.author && String(note.author._id) === String(currentUser._id))) { %>
+    <form method="post" action="/clubs/<%= club._id %>/notes/<%= note._id %>/delete" data-confirm="Delete these notes? They will also be removed from Ask the club.">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <button class="btn-link danger small" type="submit">Delete notes</button>
+    </form>
+  <% } %>
+</article>
+<%- include('../partials/foot') %>

@@ -1,0 +1,6 @@
+<%# Section tabs for a club. Locals: club, active %>
+<nav class="club-tabs" aria-label="Club sections">
+  <a href="/clubs/<%= club._id %>" class="<%= active === 'shelf' ? 'active' : '' %>">Shelf</a>
+  <a href="/clubs/<%= club._id %>/ask" class="<%= active === 'ask' ? 'active' : '' %>">Ask the club</a>
+  <a href="/clubs/<%= club._id %>/recommendations" class="<%= active === 'recs' ? 'active' : '' %>">What next?</a>
+</nav>

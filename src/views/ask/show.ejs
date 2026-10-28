@@ -1,0 +1,54 @@
+<%- include('../partials/head') %>
+<header class="club-hero compact"><p class="eyebrow">Book club</p><h1><%= club.name %></h1></header>
+<%- include('../partials/clubnav', { active: 'ask' }) %>
+
+<section class="ask">
+  <form method="post" action="/clubs/<%= club._id %>/ask" class="card ask-form">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <label for="question" class="ask-label">Ask anything about your club's books and discussions</label>
+    <textarea id="question" name="question" rows="2" maxlength="500" required placeholder="Which book did we disagree about the most?"><%= question %></textarea>
+    <div class="ask-footer">
+      <div class="chips">
+        <% examples.forEach(function (ex) { %><button type="button" class="chip" data-fill="#question"><%= ex %></button><% }) %>
+      </div>
+      <button class="btn btn-primary" type="submit" data-loading="Reading the archive…">Ask</button>
+    </div>
+    <p class="hint">Searches <%= h.plural(knowledgeChunks, 'passage') %> of book blurbs, reviews and meeting notes<%= llmLabel ? `, then ${llmLabel} writes a cited answer` : '' %>.</p>
+  </form>
+
+  <% if (typeof error !== 'undefined' && error) { %><div class="flash flash-error"><%= error %></div><% } %>
+
+  <% if (result) { %>
+    <% if (result.mode === 'no-context') { %>
+      <div class="card answer">
+        <p>There's nothing in the club's records about that yet. Add reviews or meeting notes and ask again.</p>
+      </div>
+    <% } else { %>
+      <% if (result.mode === 'answer') { %>
+        <article class="card answer">
+          <h2 class="answer-q"><%= question %></h2>
+          <div class="answer-text"><% result.segments.forEach(function (seg) { %><%= seg.text %><% seg.cites.forEach(function (n) { %><a class="cite" href="#source-<%= n %>" aria-label="Source <%= n %>"><%= n %></a><% }) %><% }) %></div>
+        </article>
+      <% } else { %>
+        <div class="callout">No LLM is configured, so here are the most relevant passages. Set <code>ANTHROPIC_API_KEY</code> (or use Bedrock) to get written answers.</div>
+      <% } %>
+      <section class="sources">
+        <h3 class="side-subtitle">Sources</h3>
+        <ol class="source-list">
+          <% result.sources.forEach(function (s) { %>
+            <li id="source-<%= s.number %>" class="card source">
+              <div class="source-head">
+                <span class="source-num"><%= s.number %></span>
+                <a href="<%= s.href %>"><%= s.title %></a>
+                <span class="source-type"><%= s.sourceType %></span>
+                <span class="muted small" title="Relevance: semantic similarity plus keyword match"><%= Math.round(s.score * 100) %>%</span>
+              </div>
+              <p class="small"><%= h.truncate(s.text, 360) %></p>
+            </li>
+          <% }) %>
+        </ol>
+      </section>
+    <% } %>
+  <% } %>
+</section>
+<%- include('../partials/foot') %>

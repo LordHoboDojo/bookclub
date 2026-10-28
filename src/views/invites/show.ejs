@@ -1,0 +1,38 @@
+<%- include('../partials/head') %>
+<section class="card invite-hero">
+  <% if (!inviteClub) { %>
+    <h1>Invite not found</h1>
+    <p class="muted">This invite link is not valid. It may have been re-sent, which replaces older links.</p>
+    <a class="btn" href="/">Go home</a>
+  <% } else { %>
+    <p class="eyebrow">You're invited</p>
+    <h1><%= inviteClub.name %></h1>
+    <% if (inviteClub.description) { %><p class="lede"><%= inviteClub.description %></p><% } %>
+    <p class="muted"><%= h.plural(inviteClub.members.length, 'member') %> · led by <%= h.displayName(inviteClub.leader) %></p>
+
+    <% if (alreadyMember) { %>
+      <div class="callout">You're already a member of this club.</div>
+      <a class="btn btn-primary" href="/clubs/<%= inviteClub._id %>">Open the club</a>
+    <% } else if (problem) { %>
+      <div class="flash flash-error"><%= problem %></div>
+      <% if (currentUser) { %>
+        <form method="post" action="/logout"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn" type="submit">Sign out</button></form>
+      <% } %>
+    <% } else if (!currentUser) { %>
+      <p>Sign in with the Google account for <strong><%= invite.email %></strong> to accept.</p>
+      <a class="btn btn-primary" href="/login">Sign in to accept</a>
+    <% } else { %>
+      <div class="row-actions">
+        <form method="post" action="/invites/<%= token %>/accept">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <button class="btn btn-primary" type="submit">Join <%= inviteClub.name %></button>
+        </form>
+        <form method="post" action="/invites/<%= token %>/decline" data-confirm="Decline this invite?">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <button class="btn btn-ghost" type="submit">No thanks</button>
+        </form>
+      </div>
+    <% } %>
+  <% } %>
+</section>
+<%- include('../partials/foot') %>
